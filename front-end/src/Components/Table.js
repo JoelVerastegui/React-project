@@ -8,49 +8,50 @@ class Table extends React.Component {
         super(props);
 
         this.state = {
+            pokes: 0,
             rows: []
         }
-
-        /* Bind functions */
-        this.getPokemons = this.getPokemons.bind(this);
-
-        /* Init functions */
-        this.getPokemons();
     }
 
-    getPokemons() {
-        axios.get('https://pokeapi.co/api/v2/pokemon/')
-            .then((res) => {
-                let results = res.data["results"];
-                let rows = [];
+    async componentDidMount(){
+        let res = await axios.get('http://localhost:4000/');
+        let results = res.data["results"];
 
-                results.map(async (e) => {
-                    await axios.get(e["url"])
-                        .then((res2) => {
-                            let data = {
-                                order: res2.data["order"] + "",
-                                name: res2.data["name"] + "",
-                                height: res2.data["height"] + "",
-                                base_experience: res2.data["base_experience"] + ""
-                            };
+        this.setState({
+            pokes: results.length
+        })
+        
+        let rows = [];
 
-                            rows.push(data);
-                        })
-                })
+        results.map(async (e) => {
+            let res2 = await axios.get(e["url"]);
 
-                this.setState((state) => {
-                    state.rows.push(...rows)
-                })
+            let data = {
+                id: res2.data["id"] + "",
+                name: res2.data["name"] + "",
+                height: res2.data["height"] + "",
+                base_experience: res2.data["base_experience"] + ""
+            };
+
+            rows.push(data);
+
+            this.setState({
+                rows
+            },() => {
+                this.forceUpdate();
             })
+        })
+    }
+
+    componentWillUnmount(){
+        console.log('El componente TABLE se ha desmontado');
     }
 
     render() {
-        let ez = [<td>RUBIUH NO SEAS MALO</td>, <td>RUBIUH NO SEAS MALO</td>, <td>RUBIUH NO SEAS MALO</td>, "ANOS"]
-        /* let ez = []; */
-
         return (
             <Fragment>
-                <table className="table">
+                {this.state.pokes == this.state.rows.length ? (
+                    <table className="table">
                     <thead className="thead-dark">
                         <tr>
                             <th scope="col">Id</th>
@@ -60,13 +61,10 @@ class Table extends React.Component {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td>{this.state.rows.length}</td></tr>
-                        {this.state.rows.length > 0 && this.state.rows.map((e, i) => { return <Row {...e} /> })}
-                        {/* ez.length ? ez.map((e,i) => {return <tr key={i}>{e}</tr>}) : (<img src="https://pixelpapa.com/wp-content/uploads/2018/11/11.gif" />)*/}
+                        {this.state.pokes == this.state.rows.length && this.state.rows.sort((a,b) => {return a.id - b.id}).map((e) => { return (<Row key={e.id} {...e} />) })  }
                     </tbody>
-                </table>
-
-                {/* <h1>{this.state.results[0] && this.state.order ? this.state.order + ": " + this.state.results[0]["name"] : (<img src="https://pixelpapa.com/wp-content/uploads/2018/11/11.gif" />)}</h1> */}
+                </table>) : (<img src="https://pixelpapa.com/wp-content/uploads/2018/11/11.gif" />)}
+                
             </Fragment>
         )
     }
